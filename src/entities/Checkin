@@ -1,0 +1,35 @@
+{
+  "name": "Checkin",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "ID do utilizador"
+    },
+    "user_email": {
+      "type": "string",
+      "description": "Email do utilizador"
+    },
+    "venue_id": {
+      "type": "string",
+      "description": "ID do local"
+    },
+    "venue_name": {
+      "type": "string",
+      "description": "Nome do local"
+    },
+    "valid": {
+      "type": "boolean",
+      "default": true,
+      "description": "Se o check-in \u00e9 v\u00e1lido"
+    },
+    "points_earned": {
+      "type": "number",
+      "description": "Pontos ganhos com este check-in"
+    }
+  },
+  "required": [
+    "user_id",
+    "venue_id"
+  ]
+}

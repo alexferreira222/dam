@@ -1,0 +1,22 @@
+{
+  "name": "Favorite",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "Email do utilizador"
+    },
+    "venue_id": {
+      "type": "string",
+      "description": "ID do local"
+    },
+    "venue_name": {
+      "type": "string",
+      "description": "Nome do local"
+    }
+  },
+  "required": [
+    "user_email",
+    "venue_id"
+  ]
+}

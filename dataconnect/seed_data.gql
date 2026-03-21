@@ -1,0 +1,145 @@
+mutation CreateSeedData @transaction @auth(level: USER, insecureReason: "This is a seed data mutation for development and should not be exposed in production.") {
+  user_insertMany(data: [
+    {
+      id: "b1a1c1d1-e1f1-1234-5678-90a0b0c0d0e0",
+      displayName: "Alice Wonderland",
+      email: "alice@example.com",
+      createdAt: "2023-01-01T10:00:00Z"
+    },
+    {
+      id: "a0b0c0d0-e0f0-4321-8765-12a1b1c1d1e1",
+      displayName: "Bob The Builder",
+      email: "bob@example.com",
+      createdAt: "2023-01-02T11:00:00Z"
+    }
+  ])
+  movie_insertMany(data: [
+    {
+      id: "a1b2c3d4-e5f6-7890-1234-567890abcdef",
+      title: "Inception",
+      year: 2010,
+      createdAt: "2023-01-01T10:05:00Z",
+      summary: "A thief who steals corporate secrets through use of dream-sharing technology is given the inverse task of planting an idea into the mind of a C.E.O.",
+      director: "Christopher Nolan",
+      genres: ["Action", "Sci-Fi", "Thriller"],
+      runtime: 148,
+      posterUrl: "https://example.com/inception.jpg"
+    },
+    {
+      id: "f6e5d4c3-b2a1-0987-6543-210fedcba987",
+      title: "The Matrix",
+      year: 1999,
+      createdAt: "2023-01-02T11:10:00Z",
+      summary: "A computer hacker learns from mysterious rebels about the true nature of his reality and his role in the war against its controllers.",
+      director: "Lana Wachowski, Lilly Wachowski",
+      genres: ["Action", "Sci-Fi"],
+      runtime: 136,
+      posterUrl: "https://example.com/thematrix.jpg"
+    },
+    {
+      id: "1a2b3c4d-5e6f-7890-abcd-ef0123456789",
+      title: "Interstellar",
+      year: 2014,
+      createdAt: "2023-01-03T12:15:00Z",
+      summary: "A team of explorers travel through a wormhole in space in an attempt to ensure humanity's survival.",
+      director: "Christopher Nolan",
+      genres: ["Adventure", "Drama", "Sci-Fi"],
+      runtime: 169,
+      posterUrl: "https://example.com/interstellar.jpg"
+    }
+  ])
+  movieList_insertMany(data: [
+    {
+      id: "list1-abc-123",
+      userId: "b1a1c1d1-e1f1-1234-5678-90a0b0c0d0e0",
+      name: "Alice's Favorites",
+      isPublic: true,
+      createdAt: "2023-01-04T13:00:00Z",
+      updatedAt: "2023-01-04T13:00:00Z",
+      description: "My top favorite movies!"
+    },
+    {
+      id: "list2-def-456",
+      userId: "a0b0c0d0-e0f0-4321-8765-12a1b1c1d1e1",
+      name: "Sci-Fi Must-Watch",
+      isPublic: false,
+      createdAt: "2023-01-05T14:00:00Z",
+      updatedAt: "2023-01-05T14:00:00Z",
+      description: "Essential sci-fi movies everyone should see."
+    }
+  ])
+  movieListEntry_insertMany(data: [
+    {
+      movieListId: "list1-abc-123",
+      movieId: "a1b2c3d4-e5f6-7890-1234-567890abcdef",
+      position: 1,
+      note: "Mind-bending!",
+      id: "entry1-alice-inception"
+    },
+    {
+      movieListId: "list1-abc-123",
+      movieId: "f6e5d4c3-b2a1-0987-6543-210fedcba987",
+      position: 2,
+      note: "Revolutionary!",
+      id: "entry2-alice-matrix"
+    },
+    {
+      movieListId: "list2-def-456",
+      movieId: "f6e5d4c3-b2a1-0987-6543-210fedcba987",
+      position: 1,
+      note: "The classic.",
+      id: "entry3-bob-matrix"
+    },
+    {
+      movieListId: "list2-def-456",
+      movieId: "1a2b3c4d-5e6f-7890-abcd-ef0123456789",
+      position: 2,
+      note: "Epic space journey.",
+      id: "entry4-bob-interstellar"
+    }
+  ])
+  watch_insertMany(data: [
+    {
+      id: "watch1-alice-inception",
+      userId: "b1a1c1d1-e1f1-1234-5678-90a0b0c0d0e0",
+      movieId: "a1b2c3d4-e5f6-7890-1234-567890abcdef",
+      watchDate: "2023-01-06",
+      createdAt: "2023-01-06T15:00:00Z",
+      location: "Home",
+      notes: "Watched with friends."
+    },
+    {
+      id: "watch2-bob-matrix",
+      userId: "a0b0c0d0-e0f0-4321-8765-12a1b1c1d1e1",
+      movieId: "f6e5d4c3-b2a1-0987-6543-210fedcba987",
+      watchDate: "2023-01-07",
+      createdAt: "2023-01-07T16:00:00Z",
+      location: "Cinema",
+      notes: "First time watching in 4K."
+    }
+  ])
+  review_insertMany(data: [
+    {
+      id: "review1-alice-inception",
+      userId: "b1a1c1d1-e1f1-1234-5678-90a0b0c0d0e0",
+      movieId: "a1b2c3d4-e5f6-7890-1234-567890abcdef",
+      watchId: "watch1-alice-inception",
+      rating: 5,
+      isPublic: true,
+      text: "Absolutely loved it!",
+      createdAt: "2023-01-06T15:30:00Z",
+      updatedAt: "2023-01-06T15:30:00Z"
+    },
+    {
+      id: "review2-bob-matrix",
+      userId: "a0b0c0d0-e0f0-4321-8765-12a1b1c1d1e1",
+      movieId: "f6e5d4c3-b2a1-0987-6543-210fedcba987",
+      watchId: "watch2-bob-matrix",
+      rating: 4,
+      isPublic: false,
+      text: "Still holds up after all these years.",
+      createdAt: "2023-01-07T16:30:00Z",
+      updatedAt: "2023-01-07T16:30:00Z"
+    }
+  ])
+}
