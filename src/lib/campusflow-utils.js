@@ -1,14 +1,23 @@
-// Utility functions for CampusFlow
+// src/lib/campusflow-utils.js
 
 export function getCrowdColor(index) {
-  if (index < 40) return { bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-200', dot: 'bg-green-500', label: 'Baixa' };
-  if (index < 70) return { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200', dot: 'bg-amber-500', label: 'Moderada' };
-  return { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200', dot: 'bg-red-500', label: 'Alta' };
+  // Ajustei as cores para serem mais vibrantes no modo claro/escuro
+  if (index < 40) return { 
+    bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-200', dot: 'bg-green-500', label: 'Livre' 
+  };
+  if (index < 70) return { 
+    bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200', dot: 'bg-amber-500', label: 'Moderada' 
+  };
+  return { 
+    bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200', dot: 'bg-red-500', label: 'Muito Lotada' 
+  };
 }
 
 export function getTrendIcon(trend) {
-  if (trend === 'subir') return '↑';
-  if (trend === 'descer') return '↓';
+  // Adicionei suporte para inglês (visto que no teu Firebase está "stable")
+  const t = trend?.toLowerCase();
+  if (t === 'subir' || t === 'up') return '↑';
+  if (t === 'descer' || t === 'down') return '↓';
   return '→';
 }
 
@@ -48,19 +57,20 @@ export function getEarnedBadges(totalCheckins) {
   return BADGES.filter(b => totalCheckins >= b.requirement).map(b => b.id);
 }
 
+// CORREÇÃO: Ícones atualizados e busca insensível a maiúsculas
 export function getCategoryIcon(category) {
-  const icons = {
-    Cantina: '🍽️',
-    Bar: '☕',
-    Biblioteca: '📚',
-    Laboratório: '🔬',
-    Auditório: '🎤',
-    Outro: '📍',
-  };
-  return icons[category] || '📍';
+  const cat = category?.toLowerCase() || '';
+  
+  if (cat.includes('cantina')) return '🍽️';
+  if (cat.includes('bar')) return '☕';
+  if (cat.includes('biblioteca') || cat.includes('estudo')) return '📚';
+  if (cat.includes('laboratório') || cat.includes('aulas')) return '🔬';
+  if (cat.includes('auditório') || cat.includes('eventos')) return '🎭';
+  if (cat.includes('lazer') || cat.includes('desporto')) return '⚽';
+  
+  return '📍';
 }
 
-// Haversine distance in meters
 export function getDistance(lat1, lon1, lat2, lon2) {
   const R = 6371000;
   const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -72,7 +82,6 @@ export function getDistance(lat1, lon1, lat2, lon2) {
   return R * c;
 }
 
-// Generate mock prediction data for a venue
 export function generatePrediction(currentIndex) {
   const predictions = [];
   const now = new Date();

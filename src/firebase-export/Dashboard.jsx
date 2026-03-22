@@ -1,5 +1,4 @@
-// src/pages/Dashboard.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { db } from '@/lib/firebase';
 import { collection, getDocs, orderBy, query } from 'firebase/firestore';
 import { useQuery } from '@tanstack/react-query';
@@ -16,9 +15,12 @@ export default function Dashboard() {
   const { data: venues = [], isLoading } = useQuery({
     queryKey: ['venues'],
     queryFn: async () => {
-      const q = query(collection(db, 'venues'), orderBy('crowd_index', 'desc'));
+      // ATENÇÃO: Mudámos para crowdIndex para bater certo com o teu Firebase
+      const q = query(collection(db, 'venues'), orderBy('crowdIndex', 'desc'));
       const snap = await getDocs(q);
-      return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      console.log("Locais carregados:", data); // Verifica isto na consola (F12)
+      return data;
     },
     refetchInterval: 30000,
   });
@@ -29,12 +31,14 @@ export default function Dashboard() {
     return catMatch && searchMatch;
   });
 
+  // Atualizado para usar crowdIndex
   const avgOccupancy = venues.length
-    ? Math.round(venues.reduce((acc, v) => acc + (v.crowd_index || 0), 0) / venues.length)
+    ? Math.round(venues.reduce((acc, v) => acc + (v.crowdIndex || 0), 0) / venues.length)
     : 0;
 
   return (
     <div className="p-4 space-y-5">
+      {/* Card de Ocupação Geral */}
       <div className="bg-gradient-to-br from-primary to-blue-700 rounded-2xl p-5 text-white">
         <div className="flex items-center gap-2 mb-1">
           <MapPin className="w-4 h-4 opacity-80" />
@@ -48,19 +52,26 @@ export default function Dashboard() {
         <div className="flex gap-4 mt-3">
           <div className="flex items-center gap-1.5">
             <div className="w-2 h-2 rounded-full bg-green-400" />
-            <span className="text-xs opacity-90">{venues.filter(v => (v.crowd_index || 0) < 40).length} livres</span>
+            <span className="text-xs opacity-90">
+              {venues.filter(v => (v.crowdIndex || 0) < 40).length} livres
+            </span>
           </div>
           <div className="flex items-center gap-1.5">
             <div className="w-2 h-2 rounded-full bg-amber-400" />
-            <span className="text-xs opacity-90">{venues.filter(v => (v.crowd_index || 0) >= 40 && (v.crowd_index || 0) < 70).length} moderados</span>
+            <span className="text-xs opacity-90">
+              {venues.filter(v => (v.crowdIndex || 0) >= 40 && (v.crowdIndex || 0) < 70).length} moderados
+            </span>
           </div>
           <div className="flex items-center gap-1.5">
             <div className="w-2 h-2 rounded-full bg-red-400" />
-            <span className="text-xs opacity-90">{venues.filter(v => (v.crowd_index || 0) >= 70).length} lotados</span>
+            <span className="text-xs opacity-90">
+              {venues.filter(v => (v.crowdIndex || 0) >= 70).length} lotados
+            </span>
           </div>
         </div>
       </div>
 
+      {/* Barra de Procura */}
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         <Input
@@ -71,8 +82,10 @@ export default function Dashboard() {
         />
       </div>
 
+      {/* Filtro de Categorias */}
       <CategoryFilter active={category} onChange={setCategory} />
 
+      {/* Lista de Locais */}
       <div className="space-y-3">
         {isLoading ? (
           Array(4).fill(0).map((_, i) => <Skeleton key={i} className="h-28 rounded-2xl" />)

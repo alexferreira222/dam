@@ -1,4 +1,3 @@
-// src/pages/VenueDetail.jsx
 import React, { useState, useEffect } from 'react';
 import { db } from '@/lib/firebase';
 import { doc, getDoc, collection, query, where, getDocs, addDoc, deleteDoc } from 'firebase/firestore';
@@ -21,34 +20,64 @@ export default function VenueDetail() {
   const [isFavorite, setIsFavorite] = useState(false);
   const [favDocId, setFavDocId] = useState(null);
 
+  // 1. Carregar dados do local
   const { data: venue, isLoading } = useQuery({
     queryKey: ['venue', venueId],
     queryFn: async () => {
       const snap = await getDoc(doc(db, 'venues', venueId));
-      return snap.exists() ? { id: snap.id, ...snap.data() } : null;
+      if (snap.exists()) {
+        const data = snap.data();
+        console.log("Dados do local carregados:", data);
+        return { id: snap.id, ...data };
+      }
+      return null;
     },
     enabled: !!venueId,
   });
 
+  // 2. Verificar se o local está nos favoritos do utilizador
   useEffect(() => {
     if (!user || !venueId) return;
-    const q = query(collection(db, 'favorites'), where('user_id', '==', user.id), where('venue_id', '==', venueId));
+    const q = query(
+      collection(db, 'favorites'), 
+      where('user_id', '==', user.id), 
+      where('venue_id', '==', venueId)
+    );
+    
     getDocs(q).then(snap => {
-      if (!snap.empty) { setIsFavorite(true); setFavDocId(snap.docs[0].id); }
+      if (!snap.empty) { 
+        setIsFavorite(true); 
+        setFavDocId(snap.docs[0].id); 
+      }
     });
   }, [user, venueId]);
 
+  // 3. Alternar Favorito
   const toggleFavorite = async () => {
-    if (isFavorite && favDocId) {
-      await deleteDoc(doc(db, 'favorites', favDocId));
-      setIsFavorite(false); setFavDocId(null);
-      toast.success('Removido dos favoritos');
-    } else {
-      const ref = await addDoc(collection(db, 'favorites'), {
-        user_id: user.id, user_email: user.email, venue_id: venueId, venue_name: venue.name,
-      });
-      setIsFavorite(true); setFavDocId(ref.id);
-      toast.success('Adicionado aos favoritos');
+    if (!user) {
+      toast.error("Faz login para guardar favoritos");
+      return;
+    }
+
+    try {
+      if (isFavorite && favDocId) {
+        await deleteDoc(doc(db, 'favorites', favDocId));
+        setIsFavorite(false); 
+        setFavDocId(null);
+        toast.success('Removido dos favoritos');
+      } else {
+        const ref = await addDoc(collection(db, 'favorites'), {
+          user_id: user.id, 
+          user_email: user.email, 
+          venue_id: venueId, 
+          venue_name: venue.name,
+        });
+        setIsFavorite(true); 
+        setFavDocId(ref.id);
+        toast.success('Adicionado aos favoritos');
+      }
+    } catch (error) {
+      console.error("Erro ao gerir favoritos:", error);
     }
   };
 
@@ -57,30 +86,42 @@ export default function VenueDetail() {
     queryClient.invalidateQueries({ queryKey: ['venues'] });
   };
 
+  // Estado de Carregamento / Local não encontrado
   if (isLoading || !venue) return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-40 bg-card/80 backdrop-blur-xl border-b border-border px-4 py-3">
         <div className="max-w-lg mx-auto flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center"><span className="text-primary-foreground font-bold text-sm">CF</span></div>
+          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
+            <span className="text-primary-foreground font-bold text-sm">CF</span>
+          </div>
           <h1 className="text-base font-bold">CampusFlow</h1>
         </div>
       </header>
       <div className="max-w-lg mx-auto p-4 space-y-4">
-        <Skeleton className="h-8 w-32" /><Skeleton className="h-48 rounded-2xl" /><Skeleton className="h-40 rounded-2xl" />
+        <Skeleton className="h-8 w-32" />
+        <Skeleton className="h-48 rounded-2xl" />
+        <Skeleton className="h-40 rounded-2xl" />
       </div>
     </div>
   );
 
-  const crowd = getCrowdColor(venue.crowd_index || 0);
+  // --- LÓGICA DE DADOS (CORRIGIDA) ---
+  const occupancyValue = venue.crowdIndex || 0;
+  const crowd = getCrowdColor(occupancyValue);
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Header */}
       <header className="sticky top-0 z-40 bg-card/80 backdrop-blur-xl border-b border-border px-4 py-3">
         <div className="max-w-lg mx-auto flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center"><span className="text-primary-foreground font-bold text-sm">CF</span></div>
+          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
+            <span className="text-primary-foreground font-bold text-sm">CF</span>
+          </div>
           <h1 className="text-base font-bold">CampusFlow</h1>
         </div>
       </header>
+
+      {/* Conteúdo Principal */}
       <div className="max-w-lg mx-auto p-4 space-y-4 pb-8">
         <div className="flex items-center justify-between">
           <Link to="/" className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
@@ -91,7 +132,8 @@ export default function VenueDetail() {
           </Button>
         </div>
 
-        <div className={`rounded-2xl border ${crowd.border} ${crowd.bg} p-5`}>
+        {/* Card de Informação Principal */}
+        <div className={`rounded-2xl border ${crowd.border} ${crowd.bg} p-5 shadow-sm transition-colors`}>
           <div className="flex items-start gap-3">
             <div className="text-3xl">{getCategoryIcon(venue.category)}</div>
             <div className="flex-1">
@@ -99,21 +141,41 @@ export default function VenueDetail() {
               <p className="text-sm text-muted-foreground">{venue.category}</p>
             </div>
           </div>
+          
           <div className="mt-4 space-y-2">
             <div className="flex items-center justify-between">
-              <span className={`text-2xl font-extrabold ${crowd.text}`}>{venue.crowd_index || 0}%</span>
-              <span className={`text-sm font-medium px-3 py-1 rounded-full ${crowd.bg} ${crowd.text} border ${crowd.border}`}>{crowd.label}</span>
+              <span className={`text-2xl font-extrabold ${crowd.text}`}>
+                {occupancyValue}%
+              </span>
+              <span className={`text-sm font-medium px-3 py-1 rounded-full ${crowd.bg} ${crowd.text} border ${crowd.border}`}>
+                {crowd.label}
+              </span>
             </div>
-            <Progress value={venue.crowd_index || 0} className="h-2" />
+            
+            <Progress value={occupancyValue} className="h-2" />
+            
             <div className="flex items-center gap-4 text-sm text-muted-foreground">
-              <span className="flex items-center gap-1"><Users className="w-3.5 h-3.5" />{venue.current_count || 0} / {venue.capacity}</span>
-              {venue.latitude && venue.longitude && <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5" />GPS ativo</span>}
+              <span className="flex items-center gap-1">
+                <Users className="w-3.5 h-3.5" />
+                {venue.currentCount || 0} / {venue.capacity || '--'}
+              </span>
+              
+              {/* Indicador de GPS se houver coordenadas */}
+              {venue.latitude && venue.longitude && (
+                <span className="flex items-center gap-1 text-blue-500">
+                  <MapPin className="w-3.5 h-3.5" />
+                  GPS ativo
+                </span>
+              )}
             </div>
           </div>
         </div>
 
+        {/* Botão de Check-in */}
         {user && <CheckinButton venue={venue} onCheckin={handleCheckin} />}
-        <OccupancyChart crowdIndex={venue.crowd_index || 0} />
+
+        {/* Gráfico de Ocupação */}
+        <OccupancyChart crowdIndex={occupancyValue} />
       </div>
     </div>
   );
