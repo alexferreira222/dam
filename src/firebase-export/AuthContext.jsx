@@ -1,4 +1,3 @@
-// src/lib/AuthContext.jsx
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { auth, db } from './firebase';
 import {
@@ -10,7 +9,7 @@ import {
   signInWithEmailAndPassword,
   updateProfile,
 } from 'firebase/auth';
-import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, onSnapshot } from 'firebase/firestore';
 
 const AuthContext = createContext();
 
@@ -19,37 +18,49 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
+    let unsubSnapshot = null;
+
+    const unsubAuth = onAuthStateChanged(auth, async (firebaseUser) => {
+      // Se o utilizador sair, limpamos o snapshot e o estado
+      if (unsubSnapshot) unsubSnapshot();
+
       if (firebaseUser) {
-        // Carrega dados extra do Firestore
-        const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
-        const extraData = userDoc.exists() ? userDoc.data() : {};
-        setUser({
-          id: firebaseUser.uid,
-          email: firebaseUser.email,
-          full_name: firebaseUser.displayName || extraData.full_name || '',
-          role: extraData.role || 'user',
-          points: extraData.points || 0,
-          level: extraData.level || 1,
-          total_checkins: extraData.total_checkins || 0,
-          badges: extraData.badges || [],
-          user_type: extraData.user_type || 'Aluno',
-          course: extraData.course || '',
+        // Criamos um "ouvinte" (Snapshot) em tempo real para os dados do utilizador
+        unsubSnapshot = onSnapshot(doc(db, 'users', firebaseUser.uid), (docSnap) => {
+          const extraData = docSnap.exists() ? docSnap.data() : {};
+          
+          setUser({
+            id: firebaseUser.uid,
+            email: firebaseUser.email,
+            full_name: firebaseUser.displayName || extraData.full_name || '',
+            role: extraData.role || 'user',
+            points: extraData.points || 0,
+            level: extraData.level || 1,
+            total_checkins: extraData.total_checkins || 0,
+            badges: extraData.badges || [],
+            user_type: extraData.user_type || 'Aluno',
+            course: extraData.course || '',
+          });
+          setLoading(false);
         });
       } else {
         setUser(null);
+        setLoading(false);
       }
-      setLoading(false);
     });
-    return unsub;
+
+    return () => {
+      unsubAuth();
+      if (unsubSnapshot) unsubSnapshot();
+    };
   }, []);
 
   const loginWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
     const result = await signInWithPopup(auth, provider);
-    // Cria documento do utilizador se não existir
     const userRef = doc(db, 'users', result.user.uid);
     const snap = await getDoc(userRef);
+    
     if (!snap.exists()) {
       await setDoc(userRef, {
         full_name: result.user.displayName,
@@ -90,8 +101,8 @@ export function AuthProvider({ children }) {
 
   const updateMe = async (data) => {
     if (!auth.currentUser) return;
+    // Aqui atualizamos o Firestore; o onSnapshot tratará de atualizar o estado local 'user'
     await updateDoc(doc(db, 'users', auth.currentUser.uid), data);
-    setUser(prev => ({ ...prev, ...data }));
   };
 
   return (

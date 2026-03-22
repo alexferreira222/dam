@@ -1,4 +1,3 @@
-// src/pages/Admin.jsx
 import React, { useState } from 'react';
 import { db } from '@/lib/firebase';
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, orderBy, query } from 'firebase/firestore';
@@ -14,7 +13,7 @@ import { toast } from 'sonner';
 import { getCategoryIcon } from '@/lib/campusflow-utils';
 import { Skeleton } from '@/components/ui/skeleton';
 
-const emptyVenue = { name: '', category: 'Cantina', latitude: '', longitude: '', capacity: 50, crowd_index: 0, current_count: 0, trend: 'estável' };
+const emptyVenue = { name: '', category: 'Cantina', latitude: '', longitude: '', capacity: 50, crowdIndex: 0, currentCount: 0, trend: 'stable' };
 
 export default function Admin() {
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -38,92 +37,115 @@ export default function Admin() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-venues'] });
-      queryClient.invalidateQueries({ queryKey: ['venues'] });
       setDialogOpen(false);
       toast.success(editingVenue ? 'Local atualizado' : 'Local criado');
     },
   });
 
-  const deleteMutation = useMutation({
-    mutationFn: (id) => deleteDoc(doc(db, 'venues', id)),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-venues'] });
-      toast.success('Local eliminado');
-    },
-  });
-
-  const openCreate = () => { setEditingVenue(null); setForm(emptyVenue); setDialogOpen(true); };
   const openEdit = (v) => {
     setEditingVenue(v);
-    setForm({ name: v.name, category: v.category, latitude: v.latitude || '', longitude: v.longitude || '', capacity: v.capacity, crowd_index: v.crowd_index || 0, current_count: v.current_count || 0, trend: v.trend || 'estável' });
+    setForm({ ...v, latitude: v.latitude ?? '', longitude: v.longitude ?? '' });
     setDialogOpen(true);
   };
 
   const handleSave = () => {
     saveMutation.mutate({
       ...form,
-      latitude: form.latitude ? parseFloat(form.latitude) : null,
-      longitude: form.longitude ? parseFloat(form.longitude) : null,
-      capacity: parseInt(form.capacity) || 50,
-      crowd_index: parseInt(form.crowd_index) || 0,
-      current_count: parseInt(form.current_count) || 0,
+      latitude: form.latitude !== '' ? parseFloat(form.latitude) : null,
+      longitude: form.longitude !== '' ? parseFloat(form.longitude) : null,
+      capacity: parseInt(form.capacity) || 0,
+      crowdIndex: parseInt(form.crowdIndex) || 0,
     });
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-20">
       <header className="sticky top-0 z-40 bg-card/80 backdrop-blur-xl border-b border-border px-4 py-3">
-        <div className="max-w-lg mx-auto flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center"><span className="text-primary-foreground font-bold text-sm">CF</span></div>
-          <h1 className="text-base font-bold">CampusFlow</h1>
-        </div>
+        <div className="max-w-lg mx-auto flex items-center gap-2 font-bold text-sm">CF CampusFlow Admin</div>
       </header>
-      <div className="max-w-lg mx-auto p-4 space-y-4 pb-8">
+
+      <div className="max-w-lg mx-auto p-4 space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Link to="/perfil"><Button variant="ghost" size="icon" className="rounded-full"><ArrowLeft className="w-4 h-4" /></Button></Link>
-            <div><h2 className="text-xl font-bold">Admin</h2><p className="text-xs text-muted-foreground">Gerir locais do campus</p></div>
+            <Link to="/perfil"><Button variant="ghost" size="icon"><ArrowLeft className="w-4 h-4" /></Button></Link>
+            <h2 className="text-xl font-bold">Gestão</h2>
           </div>
-          <Button onClick={openCreate} size="sm" className="rounded-xl gap-1"><Plus className="w-4 h-4" />Novo</Button>
+          <Button onClick={() => { setEditingVenue(null); setForm(emptyVenue); setDialogOpen(true); }} size="sm" className="rounded-xl"><Plus className="w-4 h-4 mr-1" /> Novo</Button>
         </div>
 
         <div className="space-y-2">
-          {isLoading ? Array(3).fill(0).map((_, i) => <Skeleton key={i} className="h-16 rounded-xl" />) :
-            venues.map(v => (
-              <div key={v.id} className="flex items-center gap-3 p-3 bg-card rounded-xl border border-border">
-                <span className="text-xl">{getCategoryIcon(v.category)}</span>
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-sm truncate">{v.name}</p>
-                  <p className="text-xs text-muted-foreground">{v.category} • Cap: {v.capacity} • {v.crowd_index || 0}%</p>
-                </div>
-                <div className="flex gap-1">
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(v)}><Pencil className="w-3.5 h-3.5" /></Button>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => { if (confirm('Eliminar?')) deleteMutation.mutate(v.id); }}><Trash2 className="w-3.5 h-3.5" /></Button>
-                </div>
+          {isLoading ? <Skeleton className="h-20 w-full" /> : venues.map(v => (
+            <div key={v.id} className="flex items-center gap-3 p-4 bg-card rounded-xl border border-border shadow-sm">
+              <span className="text-2xl">{getCategoryIcon(v.category)}</span>
+              <div className="flex-1 min-w-0">
+                <p className="font-bold text-sm truncate">{v.name}</p>
+                <p className="text-[10px] text-muted-foreground uppercase font-semibold">{v.category} • {v.crowdIndex}%</p>
               </div>
-            ))
-          }
+              <div className="flex gap-1">
+                <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => openEdit(v)}><Pencil className="w-4 h-4" /></Button>
+              </div>
+            </div>
+          ))}
         </div>
 
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogContent className="max-w-sm mx-auto rounded-2xl">
-            <DialogHeader><DialogTitle>{editingVenue ? 'Editar Local' : 'Novo Local'}</DialogTitle></DialogHeader>
-            <div className="space-y-3">
-              <div><Label className="text-xs">Nome</Label><Input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} className="rounded-xl mt-1" /></div>
-              <div>
-                <Label className="text-xs">Categoria</Label>
+          {/* IMPORTANTE: overflow-visible para não cortar o Select */}
+          <DialogContent className="max-w-sm mx-auto rounded-3xl p-6 shadow-2xl bg-white border-none overflow-visible">
+            <DialogHeader><DialogTitle className="font-bold">{editingVenue ? 'Editar Local' : 'Novo Local'}</DialogTitle></DialogHeader>
+            
+            <div className="space-y-4 py-2 overflow-visible">
+              <div className="space-y-1">
+                <Label className="text-xs font-bold text-muted-foreground">Nome</Label>
+                <Input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} className="rounded-xl" />
+              </div>
+
+              {/* O FIX PARA O SELECT ESTÁ AQUI */}
+              <div className="space-y-1 relative">
+                <Label className="text-xs font-bold text-muted-foreground">Categoria</Label>
                 <Select value={form.category} onValueChange={v => setForm({ ...form, category: v })}>
-                  <SelectTrigger className="rounded-xl mt-1"><SelectValue /></SelectTrigger>
-                  <SelectContent>{['Cantina', 'Bar', 'Biblioteca', 'Laboratório', 'Auditório', 'Outro'].map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                  <SelectTrigger className="rounded-xl h-11 w-full bg-white border border-input shadow-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  
+                  {/* Forçamos o popper e um z-index altíssimo */}
+                  <SelectContent 
+                    position="popper" 
+                    sideOffset={4}
+                    className="z-[9999] min-w-[var(--radix-select-trigger-width)] bg-white border border-border rounded-xl shadow-xl p-1"
+                  >
+                    {['Cantina', 'Bar', 'Biblioteca', 'Laboratório', 'Auditório', 'Lazer', 'Outro'].map(c => (
+                      <SelectItem key={c} value={c} className="rounded-lg py-2 cursor-pointer hover:bg-slate-100 uppercase text-[10px] font-bold tracking-tight">
+                        {c}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
                 </Select>
               </div>
+
               <div className="grid grid-cols-2 gap-3">
-                <div><Label className="text-xs">Latitude</Label><Input type="number" step="any" value={form.latitude} onChange={e => setForm({ ...form, latitude: e.target.value })} className="rounded-xl mt-1" /></div>
-                <div><Label className="text-xs">Longitude</Label><Input type="number" step="any" value={form.longitude} onChange={e => setForm({ ...form, longitude: e.target.value })} className="rounded-xl mt-1" /></div>
+                <div className="space-y-1">
+                  <Label className="text-xs font-bold text-muted-foreground">Latitude</Label>
+                  <Input type="number" step="any" value={form.latitude} onChange={e => setForm({ ...form, latitude: e.target.value })} className="rounded-xl" />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs font-bold text-muted-foreground">Longitude</Label>
+                  <Input type="number" step="any" value={form.longitude} onChange={e => setForm({ ...form, longitude: e.target.value })} className="rounded-xl" />
+                </div>
               </div>
-              <div><Label className="text-xs">Capacidade</Label><Input type="number" value={form.capacity} onChange={e => setForm({ ...form, capacity: e.target.value })} className="rounded-xl mt-1" /></div>
-              <Button onClick={handleSave} disabled={!form.name || saveMutation.isPending} className="w-full rounded-xl gap-2">
-                <Save className="w-4 h-4" />{editingVenue ? 'Atualizar' : 'Criar'}
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs font-bold text-muted-foreground">Capacidade</Label>
+                  <Input type="number" value={form.capacity} onChange={e => setForm({ ...form, capacity: e.target.value })} className="rounded-xl" />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs font-bold text-muted-foreground">Ocupação (%)</Label>
+                  <Input type="number" value={form.crowdIndex} onChange={e => setForm({ ...form, crowdIndex: e.target.value })} className="rounded-xl" />
+                </div>
+              </div>
+
+              <Button onClick={handleSave} className="w-full rounded-xl h-12 font-bold gap-2 shadow-lg shadow-primary/20">
+                <Save className="w-4 h-4" /> {editingVenue ? 'Guardar' : 'Criar'}
               </Button>
             </div>
           </DialogContent>

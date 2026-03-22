@@ -1,3 +1,4 @@
+// src/pages/Dashboard.jsx
 import React, { useState } from 'react';
 import { db } from '@/lib/firebase';
 import { collection, getDocs, orderBy, query } from 'firebase/firestore';
@@ -15,23 +16,28 @@ export default function Dashboard() {
   const { data: venues = [], isLoading } = useQuery({
     queryKey: ['venues'],
     queryFn: async () => {
-      // ATENÇÃO: Mudámos para crowdIndex para bater certo com o teu Firebase
+      // Ordenação correta pelo campo do teu Firebase
       const q = query(collection(db, 'venues'), orderBy('crowdIndex', 'desc'));
       const snap = await getDocs(q);
       const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      console.log("Locais carregados:", data); // Verifica isto na consola (F12)
+      console.log("Dados recebidos do Firebase:", data);
       return data;
     },
     refetchInterval: 30000,
   });
 
+  // FILTRO CORRIGIDO: Agora ignora se é maiúscula ou minúscula
   const filtered = venues.filter((v) => {
-    const catMatch = category === 'Todos' || v.category === category;
-    const searchMatch = !search || v.name.toLowerCase().includes(search.toLowerCase());
+    const venueCategory = v.category || '';
+    const catMatch = category === 'Todos' || 
+                     venueCategory.toLowerCase() === category.toLowerCase();
+    
+    const searchMatch = !search || 
+                        v.name.toLowerCase().includes(search.toLowerCase());
+    
     return catMatch && searchMatch;
   });
 
-  // Atualizado para usar crowdIndex
   const avgOccupancy = venues.length
     ? Math.round(venues.reduce((acc, v) => acc + (v.crowdIndex || 0), 0) / venues.length)
     : 0;
@@ -39,7 +45,7 @@ export default function Dashboard() {
   return (
     <div className="p-4 space-y-5">
       {/* Card de Ocupação Geral */}
-      <div className="bg-gradient-to-br from-primary to-blue-700 rounded-2xl p-5 text-white">
+      <div className="bg-gradient-to-br from-primary to-blue-700 rounded-2xl p-5 text-white shadow-lg shadow-primary/20">
         <div className="flex items-center gap-2 mb-1">
           <MapPin className="w-4 h-4 opacity-80" />
           <span className="text-xs font-medium opacity-80">Campus UTAD</span>
@@ -52,21 +58,15 @@ export default function Dashboard() {
         <div className="flex gap-4 mt-3">
           <div className="flex items-center gap-1.5">
             <div className="w-2 h-2 rounded-full bg-green-400" />
-            <span className="text-xs opacity-90">
-              {venues.filter(v => (v.crowdIndex || 0) < 40).length} livres
-            </span>
+            <span className="text-xs opacity-90">{venues.filter(v => (v.crowdIndex || 0) < 40).length} livres</span>
           </div>
           <div className="flex items-center gap-1.5">
             <div className="w-2 h-2 rounded-full bg-amber-400" />
-            <span className="text-xs opacity-90">
-              {venues.filter(v => (v.crowdIndex || 0) >= 40 && (v.crowdIndex || 0) < 70).length} moderados
-            </span>
+            <span className="text-xs opacity-90">{venues.filter(v => (v.crowdIndex || 0) >= 40 && (v.crowdIndex || 0) < 70).length} moderados</span>
           </div>
           <div className="flex items-center gap-1.5">
             <div className="w-2 h-2 rounded-full bg-red-400" />
-            <span className="text-xs opacity-90">
-              {venues.filter(v => (v.crowdIndex || 0) >= 70).length} lotados
-            </span>
+            <span className="text-xs opacity-90">{venues.filter(v => (v.crowdIndex || 0) >= 70).length} lotados</span>
           </div>
         </div>
       </div>
@@ -78,7 +78,7 @@ export default function Dashboard() {
           placeholder="Procurar local..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="pl-9 bg-card border-border rounded-xl h-10"
+          className="pl-9 bg-card border-border rounded-xl h-10 shadow-sm"
         />
       </div>
 
@@ -92,7 +92,7 @@ export default function Dashboard() {
         ) : filtered.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">
             <MapPin className="w-8 h-8 mx-auto mb-2 opacity-40" />
-            <p className="text-sm">Nenhum local encontrado</p>
+            <p className="text-sm">Nenhum local encontrado em "{category}"</p>
           </div>
         ) : (
           filtered.map((venue) => <VenueCard key={venue.id} venue={venue} />)
