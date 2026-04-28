@@ -1,0 +1,44 @@
+{
+  "expo": {
+    "name": "CloudFlow",
+    "slug": "cloudflow",
+    "version": "0.0.1",
+    "scheme": "com.cloudflow.app",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "android": {
+      "package": "com.cloudflow.app",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      }
+    },
+    "web": {
+      "favicon": "./public/icons/favicon.ico"
+    },
+    "plugins": [
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "useFrameworks": "static"
+          }
+        }
+      ]
+    ],
+    "extra": {
+      "FIREBASE_API_KEY": "AIzaSyBruifXndY5sfmUQPNnmrfdS_Xv9qWl8ew",
+      "FIREBASE_AUTH_DOMAIN": "campusflow-b41cf.firebaseapp.com",
+      "FIREBASE_PROJECT_ID": "campusflow-b41cf",
+      "FIREBASE_STORAGE_BUCKET": "campusflow-b41cf.firebasestorage.app",
+      "FIREBASE_MESSAGING_SENDER_ID": "18334003023",
+      "FIREBASE_APP_ID": "1:18334003023:web:a9d100f053013ddc445f3a"
+    }
+  }
+}
